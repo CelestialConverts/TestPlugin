@@ -1,43 +1,24 @@
-﻿using System.Collections.Generic;
 using Dalamud.Configuration;
 using Dalamud.Plugin;
-using Newtonsoft.Json;
+using System;
 
-namespace DalamudPluginProjectTemplatePython
+namespace SamplePlugin
 {
+    [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; }
+        public int Version { get; set; } = 0;
 
-        [JsonProperty]
-        private IDictionary<string, string> Properties { get; set; }
+        public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
 
-        [JsonIgnore] private DalamudPluginInterface pluginInterface;
+        // the below exist just to make saving less cumbersome
 
-        // ReSharper disable UnusedMember.Global
-        public void SetProperty(string key, string value)
-        {
-            Properties[key] = value;
-            Save();
-        }
-
-        public string GetProperty(string key)
-        {
-            return Properties[key];
-        }
-
-        public void DeleteProperty(string key)
-        {
-            Properties.Remove(key);
-            Save();
-        }
-        // ReSharper restore UnusedMember.Global
+        [NonSerialized]
+        private DalamudPluginInterface pluginInterface;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
-
-            Properties ??= new Dictionary<string, string>();
         }
 
         public void Save()

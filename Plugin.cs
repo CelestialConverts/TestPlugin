@@ -1,86 +1,64 @@
-﻿using System;
-using System.Collections.Generic;
+using Dalamud.Game.Command;
+using Dalamud.Plugin;
+using System;
 using System.IO;
 using System.Reflection;
-using Dalamud.Plugin;
-using IronPython.Hosting;
-using Microsoft.Scripting.Hosting;
 
-namespace DalamudPluginProjectTemplatePython
+namespace SamplePlugin
 {
     public class Plugin : IDalamudPlugin
     {
-        public string Name => "TestPlugin";
+        public string Name => "Sample Plugin";
 
-        private ScriptEngine engine;
+        private const string commandName = "/pmycommand";
 
-        private Configuration config;
-        private DalamudPluginInterface pluginInterface;
-        private InteropCommandManager commandManager;
+        private DalamudPluginInterface pi;
+        private Configuration configuration;
+        private PluginUI ui;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
-            this.pluginInterface = pluginInterface;
+            this.pi = pluginInterface;
+            
+            this.configuration = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
+            this.configuration.Initialize(this.pi);
 
-            this.config = (Configuration)this.pluginInterface.GetPluginConfig() ?? new Configuration();
-            this.config.Initialize(pluginInterface);
+            // you might normally want to embed resources and load them from the manifest stream
+            var imagePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"goat.png");
+            var goatImage = this.pi.UiBuilder.LoadImage(imagePath);
+            this.ui = new PluginUI(this.configuration, goatImage);
 
-            this.engine = Python.CreateEngine(AppDomain.CurrentDomain);
-            ConfigureSearchPaths();
+            this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            {
+                HelpMessage = "A useful message to display in /xlhelp"
+            });
 
-            this.commandManager = new InteropCommandManager(pluginInterface);
-
-            var scriptScope = ConfigureScope();
-            Execute("plugin.py", scriptScope);
-        }
-
-        private ScriptScope ConfigureScope()
-        {
-            var scope = this.engine.CreateScope();
-
-            scope.SetVariable("Configuration", this.config);
-            scope.SetVariable("PluginInterface", this.pluginInterface);
-
-            return scope;
-        }
-
-        private void ConfigureSearchPaths()
-        {
-            var dir = Path.Combine(Assembly.GetExecutingAssembly().Location, "..");
-            var paths = this.engine.GetSearchPaths();
-            paths.Add(dir);
-            this.engine.SetSearchPaths(paths);
-        }
-
-        private void Execute(string scriptFile, ScriptScope scope)
-        {
-            var filePath = GetRelativeFile(scriptFile);
-            this.engine.ExecuteFile(filePath, scope);
-
-            IList<dynamic> commands = scope.GetVariable("commands");
-            this.commandManager.Install(commands);
-        }
-
-        private static string GetRelativeFile(string fileName)
-        {
-            return Path.Combine(Assembly.GetExecutingAssembly().Location, "..", fileName);
-        }
-        
-        #region IDisposable Support
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposing) return;
-
-            this.config.Save();
-            this.commandManager.Uninstall();
-            this.pluginInterface.Dispose();
+            this.pi.UiBuilder.OnBuildUi += DrawUI;
+            this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            this.ui.Dispose();
+
+            this.pi.CommandManager.RemoveHandler(commandName);
+            this.pi.Dispose();
         }
-        #endregion
+
+        private void OnCommand(string command, string args)
+        {
+            // in response to the slash command, just display our main ui
+            this.ui.Visible = true;
+        }
+
+        private void DrawUI()
+        {
+            this.ui.Draw();
+        }
+
+        private void DrawConfigUI()
+        {
+            this.ui.SettingsVisible = true;
+        }
     }
 }
