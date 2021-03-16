@@ -10,7 +10,7 @@ namespace DalamudPluginProjectTemplatePython
 {
     public class Plugin : IDalamudPlugin
     {
-        public string Name => "Your Plugin's Display Name";
+        public string Name => "TestPlugin";
 
         private ScriptEngine engine;
 
