@@ -1,0 +1,11 @@
+{
+	"Author": "Para",
+	"Name": "samplePlugin",
+	"Description": "Filler text",
+	"InternalName": "samplePlugin",
+	"AssemblyVersion": "1.0.0.0",
+	"RepoUrl": "https://github.com/ackwell/BrowserHost",
+	"ApplicableVersion": "any",
+	"Tags": [ "framework", "browser", "inlay" ],
+	"DalamudApiLevel": 2
+}
